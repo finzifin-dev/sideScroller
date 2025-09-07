@@ -1,3 +1,7 @@
+var DT = 0, K = 1, _k = 1;
+var MAX_DT = 0.05;     // clamp to 50 ms
+var K_SMOOTH = 0.25;   // smoothing amount
+
 var isMovingLeft = false;
 var isMovingRight = false;
 var isMovingUp = false;
@@ -20,31 +24,31 @@ var EXIT = null;
 var CHAR_DEFS = {
   finGuy: {
     folder: "finHairGuy", baseName: "finGuy",
-    x: 0, y: 0, speed: 1.2, width: 40, height: 50,
+    x: 0, y: 0, speed: 3, width: 40, height: 50,
     mode: "player" // controlled by your isMoving* flags
   },
   pigTailGirl: {
     folder: "pigTailGirl", baseName: "pigTailGirl",
-    x: -80, y: -60, speed: 1.2, width: 40, height: 60,
+    x: -80, y: -60, speed: 3, width: 40, height: 60,
     mode: "follow", followTarget: "finGuy",
     followOpts: { stopRange: [45, 80], jitterRadius: 12, repathEvery: 14, speedScale: 0.7, hysteresis: 2 }
   },
   normalBoy: {
     folder: "normalBoy", baseName: "normalBoy",
-    x: -40, y: -40, speed: 1.0, width: 40, height: 60,
+    x: -40, y: -40, speed: 3, width: 40, height: 60,
     mode: "follow", followTarget: "finGuy",
     followOpts: { stopRange: [80, 100], jitterRadius: 12, repathEvery: 7, speedScale: 0.5, hysteresis: 2 }
   },
   fatBoy: {
     folder: "fatGuy", baseName: "fatBoy",
-    x: -40, y: -40, speed: 1.0, width: 60, height: 50,
-    mode: "follow", followTarget: "finGuy",
+    x: -40, y: -40, speed: 3, width: 50, height: 55,
+    mode: "follow", followTarget: "pigTailGirl",
     followOpts: { stopRange: [100, 120], jitterRadius: 12, repathEvery: 24, speedScale: 0.35, hysteresis: 2 }
   },
   parkGuy: {
     folder: "parkGuy", baseName: "parkGuy",
-    x: -40, y: -40, speed: 1.0, width: 40, height: 60,
-    mode: "follow", followTarget: "normalBoy",
+    x: -40, y: -40, speed: 3, width: 40, height: 60,
+    mode: "follow", followTarget: "finGuy",
     followOpts: { stopRange: [70, 80], jitterRadius: 2, repathEvery: 4, speedScale: 0.4, hysteresis: 2 }
   }
 };
@@ -348,8 +352,8 @@ function makeWalker({ x, y, speed, folder, baseName, width, height }) {
     state.moving = (dx != 0 || dy != 0);
 
     if (state.moving) {
-      var nx = sprite.x + dx * state.speed;
-      var ny = sprite.y + dy * state.speed;
+      var nx = sprite.x + dx * state.speed * K;
+      var ny = sprite.y + dy * state.speed * K;
       var rad = (sprite.width || TILE_PX) / 2;      // padding so sprite doesn’t poke past edge
       var p = clampToScreenWithAnchoredExits(nx, ny, rad);
       sprite.x = p.x; sprite.y = p.y;
@@ -405,7 +409,7 @@ function makeWalker({ x, y, speed, folder, baseName, width, height }) {
     let maxClose = distToTarget - f.stopDist;
     if (maxClose < 0) maxClose = 0;
 
-    let step = state.speed * (f.speedScale || 1);
+    let step = state.speed * (f.speedScale || 1) * K;
     step = Math.min(step, maxClose);
 
     if (step <= 0.0001) {
@@ -725,22 +729,30 @@ window.addEventListener('resize', function () {
   window.__stageResizeT = setTimeout(rebuildStageOnResize, 150);
 });
 
-
+let _last = performance.now();
 ready(() => {
-  console.log(100);
-  pathStartX = 0 - (maxX / 6);
-  pathEndX = 0 + (maxX / 6);
-
   buildStage(0);
 
   // Preload all characters declared in the registry, then create & run
   preloadAllCharacters(CHAR_DEFS).then(function () {
     createCharactersFromDefs(CHAR_DEFS);
 
-    forever(function () {
+    forever(() => {
+      const now = performance.now();
+      let dt = (now - _last) / 1000;
+      if (dt > MAX_DT) dt = MAX_DT;
+      DT = dt;
+
+      const kInst = dt * 60;
+      _k += (kInst - _k) * K_SMOOTH;
+      K = _k;
+
+      _last = now;
+
       checkUserInput();
       var arr = allCharsArray(); for (var i=0;i<arr.length;i++) arr[i].update();
       checkStageExit();
     });
   });
 });
+
