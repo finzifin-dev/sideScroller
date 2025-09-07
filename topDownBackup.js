@@ -33,13 +33,19 @@ var CHAR_DEFS = {
     folder: "normalBoy", baseName: "normalBoy",
     x: -40, y: -40, speed: 1.0, width: 40, height: 60,
     mode: "follow", followTarget: "finGuy",
-    followOpts: { stopRange: [80, 100], jitterRadius: 12, repathEvery: 14, speedScale: 0.5, hysteresis: 2 }
+    followOpts: { stopRange: [80, 100], jitterRadius: 12, repathEvery: 7, speedScale: 0.5, hysteresis: 2 }
   },
   fatBoy: {
     folder: "fatGuy", baseName: "fatBoy",
-    x: -40, y: -40, speed: 1.0, width: 40, height: 60,
+    x: -40, y: -40, speed: 1.0, width: 60, height: 50,
     mode: "follow", followTarget: "finGuy",
-    followOpts: { stopRange: [100, 120], jitterRadius: 12, repathEvery: 14, speedScale: 0.2, hysteresis: 2 }
+    followOpts: { stopRange: [100, 120], jitterRadius: 12, repathEvery: 24, speedScale: 0.35, hysteresis: 2 }
+  },
+  parkGuy: {
+    folder: "parkGuy", baseName: "parkGuy",
+    x: -40, y: -40, speed: 1.0, width: 40, height: 60,
+    mode: "follow", followTarget: "normalBoy",
+    followOpts: { stopRange: [70, 80], jitterRadius: 2, repathEvery: 4, speedScale: 0.4, hysteresis: 2 }
   }
 };
 
